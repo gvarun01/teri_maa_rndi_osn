@@ -7,7 +7,7 @@ Disassembly of section .text:
 0000000000000000 <main>:
     "chdir", "dup", "getpid", "sbrk", "sleep", "uptime", "open",
     "write", "mknod", "unlink", "link", "mkdir", "close", "waitx",
-    "getSysCount"};
+    "getSysCount" , "sigalarm", "sigreturn", "settickets"};
 
 int main(int argc, char *argv[])
 {
@@ -40,10 +40,10 @@ int main(int argc, char *argv[])
         printf("Invalid mask!!\n");
         return 0;
     }
-    int syscall_index = -1;
+    int k = -1;
     while (mask > 1)
   32:	4785                	li	a5,1
-    int syscall_index = -1;
+    int k = -1;
   34:	54fd                	li	s1,-1
     while (mask > 1)
   36:	4705                	li	a4,1
@@ -52,32 +52,32 @@ int main(int argc, char *argv[])
     {
         mask >>= 1;
   3e:	4015551b          	sraiw	a0,a0,0x1
-        syscall_index++;
+        k++;
   42:	89a6                	mv	s3,s1
   44:	0014879b          	addiw	a5,s1,1
   48:	0007849b          	sext.w	s1,a5
     while (mask > 1)
   4c:	fea749e3          	blt	a4,a0,3e <main+0x3e>
     }
-    if (syscall_index < 0 || syscall_index >= 23)
-  50:	4759                	li	a4,22
+    if (k < 0 || k >= 26)
+  50:	4765                	li	a4,25
   52:	08976d63          	bltu	a4,s1,ec <main+0xec>
   56:	e456                	sd	s5,8(sp)
     {
         printf("Invalid mask!!\n");
         return 0;
     }
-    int p = fork();
+    int pid = fork();
   58:	00000097          	auipc	ra,0x0
   5c:	36c080e7          	jalr	876(ra) # 3c4 <fork>
   60:	8aaa                	mv	s5,a0
-    if (p < 0)
+    if (pid < 0)
   62:	0a054063          	bltz	a0,102 <main+0x102>
     {
         printf("fork");
         return -1;
     }
-    else if (p == 0)
+    else if (pid == 0)
   66:	c95d                	beqz	a0,11c <main+0x11c>
         printf("Exec failed");
         exit(1);
@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
   68:	4501                	li	a0,0
   6a:	00000097          	auipc	ra,0x0
   6e:	36a080e7          	jalr	874(ra) # 3d4 <wait>
-        printf("PID %d called %s %d times.\n", p, syscall_names[syscall_index], getSysCount(syscall_index + 1));
+        printf("PID %d called %s %d times.\n", pid, syscall_names[k], getSysCount(k + 1));
   72:	048e                	slli	s1,s1,0x3
   74:	00001797          	auipc	a5,0x1
   78:	3ac78793          	addi	a5,a5,940 # 1420 <syscall_names>
@@ -920,7 +920,7 @@ printint(int fd, int xx, int base, int sgn)
     buf[i++] = digits[x % base];
  4ca:	2601                	sext.w	a2,a2
  4cc:	00000517          	auipc	a0,0x0
- 4d0:	5d450513          	addi	a0,a0,1492 # aa0 <digits>
+ 4d0:	60450513          	addi	a0,a0,1540 # ad0 <digits>
  4d4:	883a                	mv	a6,a4
  4d6:	2705                	addiw	a4,a4,1
  4d8:	02c5f7bb          	remuw	a5,a1,a2
@@ -1046,7 +1046,7 @@ vprintf(int fd, const char *fmt, va_list ap)
  5ca:	12eb6163          	bltu	s6,a4,6ec <vprintf+0x192>
  5ce:	00271793          	slli	a5,a4,0x2
  5d2:	00000717          	auipc	a4,0x0
- 5d6:	47670713          	addi	a4,a4,1142 # a48 <malloc+0x23c>
+ 5d6:	4a670713          	addi	a4,a4,1190 # a78 <malloc+0x26c>
  5da:	97ba                	add	a5,a5,a4
  5dc:	439c                	lw	a5,0(a5)
  5de:	97ba                	add	a5,a5,a4
@@ -1109,7 +1109,7 @@ vprintf(int fd, const char *fmt, va_list ap)
  65c:	4941                	li	s2,16
     putc(fd, digits[x >> (sizeof(uint64) * 8 - 4)]);
  65e:	00000b97          	auipc	s7,0x0
- 662:	442b8b93          	addi	s7,s7,1090 # aa0 <digits>
+ 662:	472b8b93          	addi	s7,s7,1138 # ad0 <digits>
  666:	03c9d793          	srli	a5,s3,0x3c
  66a:	97de                	add	a5,a5,s7
  66c:	0007c583          	lbu	a1,0(a5)
@@ -1150,7 +1150,7 @@ vprintf(int fd, const char *fmt, va_list ap)
  6b2:	b5ed                	j	59c <vprintf+0x42>
           s = "(null)";
  6b4:	00000917          	auipc	s2,0x0
- 6b8:	38c90913          	addi	s2,s2,908 # a40 <malloc+0x234>
+ 6b8:	3bc90913          	addi	s2,s2,956 # a70 <malloc+0x264>
         while(*s != 0){
  6bc:	02800593          	li	a1,40
  6c0:	bff1                	j	69c <vprintf+0x142>
@@ -1282,7 +1282,7 @@ free(void *ap)
  790:	ff050693          	addi	a3,a0,-16
   for(p = freep; !(bp > p && bp < p->s.ptr); p = p->s.ptr)
  794:	00001797          	auipc	a5,0x1
- 798:	d4c7b783          	ld	a5,-692(a5) # 14e0 <freep>
+ 798:	d5c7b783          	ld	a5,-676(a5) # 14f0 <freep>
  79c:	a02d                	j	7c6 <free+0x3c>
     if(p >= p->s.ptr && (bp > p || bp < p->s.ptr))
       break;
@@ -1338,7 +1338,7 @@ free(void *ap)
     p->s.ptr = bp;
   freep = p;
  7fe:	00001717          	auipc	a4,0x1
- 802:	cef73123          	sd	a5,-798(a4) # 14e0 <freep>
+ 802:	cef73923          	sd	a5,-782(a4) # 14f0 <freep>
 }
  806:	6422                	ld	s0,8(sp)
  808:	0141                	addi	sp,sp,16
@@ -1369,7 +1369,7 @@ malloc(uint nbytes)
  826:	0485                	addi	s1,s1,1
   if((prevp = freep) == 0){
  828:	00001517          	auipc	a0,0x1
- 82c:	cb853503          	ld	a0,-840(a0) # 14e0 <freep>
+ 82c:	cc853503          	ld	a0,-824(a0) # 14f0 <freep>
  830:	c915                	beqz	a0,864 <malloc+0x58>
     base.s.ptr = freep = prevp = &base;
     base.s.size = 0;
@@ -1399,7 +1399,7 @@ malloc(uint nbytes)
     }
     if(p == freep)
  858:	00001917          	auipc	s2,0x1
- 85c:	c8890913          	addi	s2,s2,-888 # 14e0 <freep>
+ 85c:	c9890913          	addi	s2,s2,-872 # 14f0 <freep>
   if(p == (char*)-1)
  860:	5afd                	li	s5,-1
  862:	a091                	j	8a6 <malloc+0x9a>
@@ -1409,9 +1409,9 @@ malloc(uint nbytes)
  86a:	e05a                	sd	s6,0(sp)
     base.s.ptr = freep = prevp = &base;
  86c:	00001797          	auipc	a5,0x1
- 870:	c8478793          	addi	a5,a5,-892 # 14f0 <base>
+ 870:	c9478793          	addi	a5,a5,-876 # 1500 <base>
  874:	00001717          	auipc	a4,0x1
- 878:	c6f73623          	sd	a5,-916(a4) # 14e0 <freep>
+ 878:	c6f73e23          	sd	a5,-900(a4) # 14f0 <freep>
  87c:	e39c                	sd	a5,0(a5)
     base.s.size = 0;
  87e:	0007a423          	sw	zero,8(a5)
@@ -1470,7 +1470,7 @@ malloc(uint nbytes)
  8e6:	0137a423          	sw	s3,8(a5)
       freep = prevp;
  8ea:	00001717          	auipc	a4,0x1
- 8ee:	bea73b23          	sd	a0,-1034(a4) # 14e0 <freep>
+ 8ee:	c0a73323          	sd	a0,-1018(a4) # 14f0 <freep>
       return (void*)(p + 1);
  8f2:	01078513          	addi	a0,a5,16
   }

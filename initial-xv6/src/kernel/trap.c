@@ -74,28 +74,23 @@ void usertrap(void)
     printf("            sepc=%p stval=%p\n", r_sepc(), r_stval());
     setkilled(p);
   }
-  if (which_dev == 2 && p->alarm_interval > 0)
+  if (which_dev == 2 && p->interval > 0)
   {
     p->ticks++;
-    // Check if it's time to trigger the alarm handler
-    if (p->ticks >= p->alarm_interval && p->alarm_active == 0)
+    if (p->ticks >= p->interval && p->alarm_set == 0)
     {
-      p->ticks = 0;        // Reset the tick count
-      p->alarm_active = 1; // Mark that handler is active to prevent re-entry
-
-      // Save the current trapframe to restore later in sigreturn
-      memmove(&p->alarm_tf, p->trapframe, sizeof(struct trapframe));
-
-      // Change the epc to the alarm handler function address
-      p->trapframe->epc = p->handler;
+      p->ticks = 0;
+      p->alarm_set = 1; 
+      memmove(&p->saved_alarm_tf, p->trapframe, sizeof(struct trapframe));
+      p->trapframe->epc = p->handler_addr;
     }
   }
   if (which_dev == 2 && SCHEDULER == LBS)
-  { // Timer interrupt
+  { 
     struct proc *p = myproc();
     if (p && p->state == RUNNING)
     {
-      yield(); // Preempt the process after one tick
+      yield(); 
     }
   }
   if (which_dev == 2 && SCHEDULER == MLFQ)
@@ -103,13 +98,8 @@ void usertrap(void)
     struct proc *p = myproc();
     if (p && p->state == RUNNING)
     {
-      // Increment the tick count for the current process
       p->ticks++;
-
-      // Get the time slice for the current process's priority
       int time_slice = get_time_slice(p->priority);
-
-      // Preempt only if the process has used up its time slice
       if (p->ticks >= time_slice)
       {
         yield();

@@ -143,6 +143,11 @@ found:
     return 0;
   }
 
+  for (int x = 0; x <= NSYSCALLS; x++)
+  {
+    p->syscall_count[x] = 0;
+  }
+
   // An empty user page table.
   p->pagetable = proc_pagetable(p);
   if (p->pagetable == 0)
@@ -164,12 +169,7 @@ found:
   p->ticks = 0;
   p->arrival_time = ticks;// to add new process in the end;
   p->priority = 0;
-  // enqueue(mlfq_queues[0], p, queue_sizes[0]);
-  // queue_sizes[0]++;
-  for (int x = 0; x <= 26; x++)
-  {
-    p->syscall_count[x] = 0;
-  }
+
   return p;
 }
 

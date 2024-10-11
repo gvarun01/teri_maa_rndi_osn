@@ -7,7 +7,7 @@ char *syscall_names[] = {
     "fork", "exit", "wait", "pipe", "read", "kill", "exec", "fstat",
     "chdir", "dup", "getpid", "sbrk", "sleep", "uptime", "open",
     "write", "mknod", "unlink", "link", "mkdir", "close", "waitx",
-    "getSysCount"};
+    "getSysCount" , "sigalarm", "sigreturn", "settickets"};
 
 int main(int argc, char *argv[])
 {
@@ -22,24 +22,24 @@ int main(int argc, char *argv[])
         printf("Invalid mask!!\n");
         return 0;
     }
-    int syscall_index = -1;
+    int k = -1;
     while (mask > 1)
     {
         mask >>= 1;
-        syscall_index++;
+        k++;
     }
-    if (syscall_index < 0 || syscall_index >= 23)
+    if (k < 0 || k >= 26)
     {
         printf("Invalid mask!!\n");
         return 0;
     }
-    int p = fork();
-    if (p < 0)
+    int pid = fork();
+    if (pid < 0)
     {
         printf("fork");
         return -1;
     }
-    else if (p == 0)
+    else if (pid == 0)
     {
         exec(argv[2], argv + 2);
         printf("Exec failed");
@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
     else
     {
         wait(0);
-        printf("PID %d called %s %d times.\n", p, syscall_names[syscall_index], getSysCount(syscall_index + 1));
+        printf("PID %d called %s %d times.\n", pid, syscall_names[k], getSysCount(k + 1));
     }
     return 0;
 }

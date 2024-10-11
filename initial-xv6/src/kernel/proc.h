@@ -126,11 +126,11 @@ struct proc
 
 
   // sigalarm and sigreturn
-  int ticks;          
-  int alarm_interval;      
-  uint64 handler;     
-  struct trapframe alarm_tf; 
-  int alarm_active;
+  int ticks;           
+  int interval;      
+  uint64 handler_addr;       
+  struct trapframe saved_alarm_tf;      
+  int alarm_set;        
 
 
   // these are private to the process, so p->lock need not be held.
